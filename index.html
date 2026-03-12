@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Diagnóstico Nível de Autoestima — Instituto Impulso</title>
+  <title>Diagnóstico do Nível de Autoestima — Instituto Impulso</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
@@ -98,7 +98,7 @@
         A mudança pode acontecer em um instante
       </div>
       <h1 class="mt-5 text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight">
-       Diagnóstico Nível de Autoestima
+       Diagnóstico do Nível de Autoestima
       </h1>
       <p class="text-sm text-slate-500 mt-2 max-w-xl mx-auto">Uma ferramenta estruturada em Psicologia Positiva e Liderança Comportamental para mapear sua base emocional.</p>
     </div>
@@ -129,7 +129,7 @@
         </div>
         <div class="flex justify-end mt-7 actions-mobile">
           <button onclick="startTest()" class="btn-primary text-white px-8 py-3.5 rounded-xl shadow-lg font-extrabold text-lg hover:shadow-xl w-full md:w-auto">
-            Iniciar Diagnóstico Comportamental
+            Iniciar Diagnóstico 
           </button>
         </div>
       </div>
@@ -703,7 +703,7 @@ async function generatePdfDocAndFileName() {
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 58, 138); 
-  doc.text("COMO VOCÊ COSTUMA SE COMPORTAR", margin + 6, y + 8);
+  doc.text("Como você costuma agir nas situações do dia a dia", margin + 6, y + 8);
   
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.3);
@@ -761,7 +761,7 @@ async function generatePdfDocAndFileName() {
   doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
   doc.setFont("helvetica", "bold");
-  doc.text("SÍNTESE DO PERFIL COMPORTAMENTAL", mainRightX, mainLeftBoxY + 7);
+  doc.text("Leitura do Perfil Comportamental", mainRightX, mainLeftBoxY + 7);
 
   doc.setFontSize(11);
   doc.setTextColor(15, 23, 42);
@@ -889,7 +889,7 @@ async function generatePdfDocAndFileName() {
     doc.setFontSize(7.5);
     doc.setTextColor(100, 116, 139);
     doc.setFont("helvetica", "bold");
-    doc.text("PARECER TÉCNICO", rightX, textY);
+    doc.text("Parecer Técnico", rightX, textY);
     
     textY += 5;
     doc.setFont("helvetica", "normal");
@@ -913,7 +913,7 @@ async function generatePdfDocAndFileName() {
   });
 
   addSignatureFooter();
-  const pdfFileName = `IGA_${sanitize(data.user.name).replace(/\s+/g,"_")}.pdf`;
+  const pdfFileName = `IGA: ${sanitize(data.user.name).replace(/\s+/g,"_")}.pdf`;
   return { doc, pdfFileName };
 }
 
