@@ -204,6 +204,7 @@
     </div>
   </div>
 
+<script src="https://impulso-pesquisas-admin.prrogeriobraga.chatgpt.site/access-control.js"></script>
 <script>
 "use strict";
 
@@ -410,7 +411,7 @@ function practicalLine(dimIndex, v, n){
   return tipMatrix[key].high[n-1];
 }
 
-function startTest(){
+async function startTest(){
   const name = document.getElementById("name").value.trim();
   const email = document.getElementById("email").value.trim();
   const whatsapp = document.getElementById("whatsapp").value.trim();
@@ -424,14 +425,27 @@ function startTest(){
     return;
   }
 
-  user = { name, email, whatsapp, age: String(ageNum), occupation, education };
-  questions = buildQuestionsShuffled();
-  responses = new Array(questions.length).fill(null);
-  current = 0;
-
-  document.getElementById("intro").classList.add("hidden");
-  document.getElementById("test").classList.remove("hidden");
-  renderQuestion();
+  if (!window.ImpulsoResearchAccess) {
+    alert("O controle de acesso não carregou. Recarregue a página e tente novamente.");
+    return;
+  }
+  const button = document.querySelector('#intro button[onclick="startTest()"]');
+  await window.ImpulsoResearchAccess.start({
+    researchId: "iga-autoestima",
+    name,
+    email,
+    whatsapp,
+    button,
+    onAllowed: () => {
+      user = { name, email, whatsapp, age: String(ageNum), occupation, education };
+      questions = buildQuestionsShuffled();
+      responses = new Array(questions.length).fill(null);
+      current = 0;
+      document.getElementById("intro").classList.add("hidden");
+      document.getElementById("test").classList.remove("hidden");
+      renderQuestion();
+    }
+  });
 }
 
 function renderQuestion(){
