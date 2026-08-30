@@ -212,6 +212,8 @@ const MIN_HEALTHY_PCT = 70;
 
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwK2vbptHsg3dT4AGQT2ZLL8Tl2M7HO6oAiP68mr5kwtJfWgxWivjTX1_llkk97b7-a/exec";
 const API_KEY = "2026Impulso$";
+const MAX_PDF_BASE64 = 8500000;
+const SEND_TIMEOUT_MS = 120000;
 
 let autoSendInProgress = false;
 let autoSendDone = false;
@@ -243,19 +245,49 @@ function setAutoSendStatus(msg, type = 'pending') {
   }
 }
 
-async function postResultToScript(payload) {
+async function fetchWithTimeout(url, options = {}, timeout = SEND_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+
   try {
-    const response = await fetch(WEB_APP_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    return response;
-  } catch (error) {
-    console.error("Erro ao enviar para Google Apps Script:", error);
-    throw error;
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
   }
+}
+
+async function postResultToScript(payload) {
+  console.log("Enviando resultado I.G.A. para o Google Apps Script...");
+  console.log("Tamanho JSON total (chars):", JSON.stringify(payload).length);
+  console.log("Tamanho pdfBase64 (chars):", payload.pdfBase64 ? payload.pdfBase64.length : 0);
+
+  const response = await fetchWithTimeout(WEB_APP_URL, {
+    method: "POST",
+    redirect: "follow",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  });
+
+  const text = await response.text();
+  console.log("Status HTTP:", response.status);
+  console.log("Resposta Apps Script:", text);
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${text.substring(0, 300)}`);
+  }
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    throw new Error("Resposta inválida do servidor: " + text.substring(0, 300));
+  }
+
+  if (data.ok === false || data.success === false) {
+    throw new Error(data.message || data.error || "Erro retornado pelo servidor.");
+  }
+
+  return data;
 }
 
 const DIMENSIONS = [
@@ -955,6 +987,12 @@ async function autoSendWithPdf() {
     const { doc, pdfFileName } = await generatePdfDocAndFileName();
     const base64 = doc.output("datauristring").split(",")[1];
 
+    console.log("Tamanho final PDF base64:", base64.length, "chars");
+
+    if (base64.length > MAX_PDF_BASE64) {
+      throw new Error("PDF gerado muito grande (" + (base64.length / 1000000).toFixed(1) + " MB). Tente recarregar a página.");
+    }
+
     let chartImgData = "";
     if (chartInstance) {
       try { chartImgData = chartInstance.toBase64Image(); } catch (e) { chartImgData = ""; }
@@ -997,7 +1035,8 @@ async function autoSendWithPdf() {
       sendEmail: true
     };
 
-    await postResultToScript(payload);
+    const result = await postResultToScript(payload);
+    console.log("Resultado confirmado pelo servidor:", result);
     await wait(1000);
 
     autoSendDone = true;
@@ -1005,14 +1044,16 @@ async function autoSendWithPdf() {
     document.getElementById('final-success-message').classList.remove('hidden');
 
   } catch (e) {
-    console.error(e);
+    console.error("Falha autoSendWithPdf:", e);
     emailSendAttempts++;
     if (emailSendAttempts < MAX_EMAIL_ATTEMPTS) {
-      setAutoSendStatus(`⚠️ Tentativa ${emailSendAttempts}/${MAX_EMAIL_ATTEMPTS} - Estabilizando conexão com o servidor...`, "error");
+      setAutoSendStatus(`⚠️ Tentando novamente (${emailSendAttempts}/${MAX_EMAIL_ATTEMPTS})... ${e.message || ""}`, "error");
+      autoSendInProgress = false;
       await wait(3000);
       await autoSendWithPdf();
+      return;
     } else {
-      setAutoSendStatus("❌ Ocorreu um erro na transmissão. Por favor, relate para impulsoflow@gmail.com", "error");
+      setAutoSendStatus("❌ Erro no envio: " + (e.message || "falha desconhecida") + ". Se persistir, relate para impulsoflow@gmail.com", "error");
     }
   } finally {
     autoSendInProgress = false;
