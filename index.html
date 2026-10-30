@@ -998,6 +998,7 @@ async function autoSendWithPdf() {
     };
 
     await postResultToScript(payload);
+    if(window.ImpulsoAccountBridge?.active)void window.ImpulsoAccountBridge.reportSaved?.(false); // resposta opaca no-cors
     await wait(1000);
 
     autoSendDone = true;
