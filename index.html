@@ -481,9 +481,7 @@ function renderQuestion(){
           Voltar
         </button>
         ${current < total-1
-          ? `<button onclick="next()" class="btn-primary text-white px-9 py-3.5 rounded-xl shadow-md font-extrabold ${responses[current]===null?'opacity-50 cursor-not-allowed':''}">
-              Avançar
-            </button>`
+          ? `<span class="text-sm font-semibold text-slate-500" role="status">Selecione uma resposta para avançar automaticamente →</span>`
           : `<button onclick="finish()" class="btn-primary text-white px-9 py-3.5 rounded-xl shadow-md font-extrabold ${responses[current]===null?'opacity-50 cursor-not-allowed':''}">
               Gerar Diagnóstico
             </button>`
