@@ -58,7 +58,19 @@
     .btn-primary:active { transform: scale(0.98); }
     .progress-rail { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
     .progress-fill { height: 100%; background: linear-gradient(90deg, #60a5fa, #2563eb); transition: width .3s ease; }
-    #themesChart { max-width: 920px !important; height: 360px !important; margin: 0 auto; }
+    .chart-shell {
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      height: 360px;
+      overflow: hidden;
+    }
+    #themesChart {
+      display: block;
+      width: 100% !important;
+      max-width: 100% !important;
+      height: 100% !important;
+    }
     .sig-ui {
       font-family: "Dancing Script", cursive;
       color: #1e40af;
@@ -93,6 +105,9 @@
       .scale-option small { font-size: 12px !important; text-align: left; letter-spacing: 0; }
       .question-text { font-size: 17px !important; line-height: 1.4 !important; }
       .actions-mobile button { width: 100% !important; }
+      .chart-shell { height: 420px; }
+      #themesChart { height: 100% !important; }
+      .chart-shell + p { margin-top: 1rem; }
     }
   </style>
 </head>
@@ -185,7 +200,9 @@
 
         <div class="mt-6 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <p class="text-xs font-extrabold text-slate-800 mb-5 uppercase tracking-wide">Mapeamento de Competências Emocionais</p>
-          <canvas id="themesChart"></canvas>
+          <div class="chart-shell">
+            <canvas id="themesChart"></canvas>
+          </div>
           <p class="text-xs text-slate-500 mt-5 text-center font-medium bg-slate-50 py-2 rounded-lg border border-slate-100">
             Referência de alta performance: mínimo de <span class="font-extrabold text-blue-700" id="minHealthyLabel">—</span>
           </p>
