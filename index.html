@@ -557,7 +557,15 @@ function renderAlerts(pctByDim){
 
 function renderThemesChart(pctByDim){
   document.getElementById("minHealthyLabel").textContent = `${MIN_HEALTHY_PCT}%`;
+  const isMobileChart = window.matchMedia("(max-width: 480px)").matches;
   const labels = DIMENSIONS.map(d=>d.name);
+  const mobileLabels = [
+    ["Autovalorização", "e Autoaceitação"],
+    ["Autoconfiança e", "Competência Percebida"],
+    ["Autoimagem e", "Aceitação Social"],
+    ["Autocompaixão e", "Diálogo Interno"],
+    ["Estabilidade Emocional", "e Resiliência"]
+  ];
   const data = pctByDim.map(v=>Math.round(v));
   const ctx = document.getElementById("themesChart").getContext("2d");
 
@@ -583,8 +591,28 @@ function renderThemesChart(pctByDim){
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        x: { beginAtZero: true, max: 100, ticks: { stepSize: 10, color: "#475569", font: { size: 11, family: "Inter" } }, grid: { color: "rgba(0,0,0,0.04)" } },
-        y: { ticks: { color: "#1e293b", font: { size: 12, weight: "600", family: "Inter" } }, grid: { display: false } }
+        x: {
+          beginAtZero: true,
+          max: 100,
+          ticks: {
+            stepSize: 10,
+            maxRotation: 0,
+            minRotation: 0,
+            color: "#475569",
+            font: { size: isMobileChart ? 10 : 11, family: "Inter" }
+          },
+          grid: { color: "rgba(0,0,0,0.04)" }
+        },
+        y: {
+          ticks: {
+            autoSkip: false,
+            color: "#1e293b",
+            padding: isMobileChart ? 4 : 8,
+            callback: (value, index) => isMobileChart ? mobileLabels[index] : labels[index],
+            font: { size: isMobileChart ? 10 : 12, weight: "600", family: "Inter" }
+          },
+          grid: { display: false }
+        }
       },
       plugins: {
         legend: { display: false },
@@ -607,7 +635,9 @@ function renderThemesChart(pctByDim){
         ctx.setLineDash([]);
         ctx.fillStyle = "rgba(180,83,9,1)";
         ctx.font = "bold 10px Inter, Arial";
-        ctx.fillText(`Mínimo de Alta Performance (${MIN_HEALTHY_PCT}%)`, x + 6, chartArea.bottom - 10);
+        const thresholdLabel = isMobileChart ? `Meta ${MIN_HEALTHY_PCT}%` : `Mínimo de Alta Performance (${MIN_HEALTHY_PCT}%)`;
+        ctx.font = isMobileChart ? "bold 9px Inter, Arial" : "bold 10px Inter, Arial";
+        ctx.fillText(thresholdLabel, isMobileChart ? Math.max(chartArea.left + 4, x - 22) : x + 6, chartArea.bottom - 10);
         ctx.restore();
       }
     }]
