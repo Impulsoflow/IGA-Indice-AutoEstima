@@ -58,19 +58,7 @@
     .btn-primary:active { transform: scale(0.98); }
     .progress-rail { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
     .progress-fill { height: 100%; background: linear-gradient(90deg, #60a5fa, #2563eb); transition: width .3s ease; }
-    .chart-shell {
-      position: relative;
-      width: 100%;
-      max-width: 100%;
-      height: 360px;
-      overflow: hidden;
-    }
-    #themesChart {
-      display: block;
-      width: 100% !important;
-      max-width: 100% !important;
-      height: 100% !important;
-    }
+    #themesChart { max-width: 920px !important; height: 360px !important; margin: 0 auto; }
     .sig-ui {
       font-family: "Dancing Script", cursive;
       color: #1e40af;
@@ -105,9 +93,6 @@
       .scale-option small { font-size: 12px !important; text-align: left; letter-spacing: 0; }
       .question-text { font-size: 17px !important; line-height: 1.4 !important; }
       .actions-mobile button { width: 100% !important; }
-      .chart-shell { height: 420px; }
-      #themesChart { height: 100% !important; }
-      .chart-shell + p { margin-top: 1rem; }
     }
   </style>
 </head>
@@ -200,9 +185,7 @@
 
         <div class="mt-6 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <p class="text-xs font-extrabold text-slate-800 mb-5 uppercase tracking-wide">Mapeamento de Competências Emocionais</p>
-          <div class="chart-shell">
-            <canvas id="themesChart"></canvas>
-          </div>
+          <canvas id="themesChart"></canvas>
           <p class="text-xs text-slate-500 mt-5 text-center font-medium bg-slate-50 py-2 rounded-lg border border-slate-100">
             Referência de alta performance: mínimo de <span class="font-extrabold text-blue-700" id="minHealthyLabel">—</span>
           </p>
@@ -557,15 +540,7 @@ function renderAlerts(pctByDim){
 
 function renderThemesChart(pctByDim){
   document.getElementById("minHealthyLabel").textContent = `${MIN_HEALTHY_PCT}%`;
-  const isMobileChart = window.matchMedia("(max-width: 480px)").matches;
   const labels = DIMENSIONS.map(d=>d.name);
-  const mobileLabels = [
-    ["Autovalorização", "e Autoaceitação"],
-    ["Autoconfiança e", "Competência Percebida"],
-    ["Autoimagem e", "Aceitação Social"],
-    ["Autocompaixão e", "Diálogo Interno"],
-    ["Estabilidade Emocional", "e Resiliência"]
-  ];
   const data = pctByDim.map(v=>Math.round(v));
   const ctx = document.getElementById("themesChart").getContext("2d");
 
@@ -591,28 +566,8 @@ function renderThemesChart(pctByDim){
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        x: {
-          beginAtZero: true,
-          max: 100,
-          ticks: {
-            stepSize: 10,
-            maxRotation: 0,
-            minRotation: 0,
-            color: "#475569",
-            font: { size: isMobileChart ? 10 : 11, family: "Inter" }
-          },
-          grid: { color: "rgba(0,0,0,0.04)" }
-        },
-        y: {
-          ticks: {
-            autoSkip: false,
-            color: "#1e293b",
-            padding: isMobileChart ? 4 : 8,
-            callback: (value, index) => isMobileChart ? mobileLabels[index] : labels[index],
-            font: { size: isMobileChart ? 10 : 12, weight: "600", family: "Inter" }
-          },
-          grid: { display: false }
-        }
+        x: { beginAtZero: true, max: 100, ticks: { stepSize: 10, color: "#475569", font: { size: 11, family: "Inter" } }, grid: { color: "rgba(0,0,0,0.04)" } },
+        y: { ticks: { color: "#1e293b", font: { size: 12, weight: "600", family: "Inter" } }, grid: { display: false } }
       },
       plugins: {
         legend: { display: false },
@@ -635,9 +590,7 @@ function renderThemesChart(pctByDim){
         ctx.setLineDash([]);
         ctx.fillStyle = "rgba(180,83,9,1)";
         ctx.font = "bold 10px Inter, Arial";
-        const thresholdLabel = isMobileChart ? `Meta ${MIN_HEALTHY_PCT}%` : `Mínimo de Alta Performance (${MIN_HEALTHY_PCT}%)`;
-        ctx.font = isMobileChart ? "bold 9px Inter, Arial" : "bold 10px Inter, Arial";
-        ctx.fillText(thresholdLabel, isMobileChart ? Math.max(chartArea.left + 4, x - 22) : x + 6, chartArea.bottom - 10);
+        ctx.fillText(`Mínimo de Alta Performance (${MIN_HEALTHY_PCT}%)`, x + 6, chartArea.bottom - 10);
         ctx.restore();
       }
     }]
@@ -996,6 +949,7 @@ async function autoSendWithPdf() {
   try {
     const data = window._igaData;
     if (!data) throw new Error("Sem dados.");
+    let portalArtifactsOk=true;
 
     const { doc, pdfFileName } = await generatePdfDocAndFileName();
     const base64 = doc.output("datauristring").split(",")[1];
@@ -1043,11 +997,21 @@ async function autoSendWithPdf() {
     };
 
     await postResultToScript(payload);
-    if(window.ImpulsoAccountBridge?.active)void window.ImpulsoAccountBridge.reportSaved?.(false); // resposta opaca no-cors
+    if(window.ImpulsoAccountBridge?.active){
+      try{
+        await window.ImpulsoAccountBridge.saveReportPdf(base64);
+        const saved=await window.ImpulsoAccountBridge.saveMiniSummary({pctByDim:data.pctByDim,igaPct:data.igaPct,level:data.level});
+        if(!saved)throw new Error("Resumo não confirmado pela Central.");
+      }catch(error){
+        portalArtifactsOk=false;
+        console.warn("Artefatos da conta IMPULSO pendentes",error instanceof Error?error.message:"erro");
+      }
+    }
     await wait(1000);
 
     autoSendDone = true;
-    setAutoSendStatus("", "success");
+    if(portalArtifactsOk)setAutoSendStatus("", "success");
+    else setAutoSendStatus("⚠️ O diagnóstico foi processado, mas o PDF/resumo ainda aguarda sincronização com a conta IMPULSO. Preserve o PDF local e não refaça a pesquisa.","error");
     document.getElementById('final-success-message').classList.remove('hidden');
 
   } catch (e) {
